@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-原生 JavaScript 的 Vite 单页游戏，包含 Three.js 渲染、物理模拟、实时 Web Audio、鼠标/触摸/摇动/MediaPipe 手势控制与挑战记分。项目已接入 EdgeOne Pages 持续部署：推送 `main` 会触发 GitHub Actions 构建并发布 `dist`。
+原生 JavaScript 的 Vite 单页游戏，包含 Three.js 渲染、物理模拟、实时 Web Audio、鼠标/触摸/摇动/MediaPipe 手势控制与挑战记分。项目已接入 EdgeOne Makers 持续部署：推送 `main` 会触发 GitHub Actions 构建并发布 `dist`。
 
 ## 项目结构
 
@@ -10,8 +10,8 @@
 - `src/main.js`：3D 场景、物理、音频、交互与手势逻辑。
 - `src/styles.css`：响应式 UI 和声波视觉反馈。
 - `public/audio/you-gan-ma.mp3`：用户提供的“你干嘛”模式循环音轨。
-- `edgeone.json`：EdgeOne Pages 的构建命令和输出目录配置。
-- `.github/workflows/edgeone-pages.yml`：main 分支的构建与 EdgeOne 部署工作流。
+- `edgeone.json`：EdgeOne Makers 的构建命令和输出目录配置。
+- `.github/workflows/edgeone-makers.yml`：main 分支的构建与 EdgeOne Makers 部署工作流。
 - `package.json`：启动脚本与依赖。
 - `README.md`：启动、操作与部署说明。
 
@@ -23,4 +23,4 @@
 
 ## 部署
 
-EdgeOne 工作流要求仓库变量 `EDGEONE_PROJECT_NAME` 和仓库密钥 `EDGEONE_API_TOKEN`。配置完成后，推送到 `main` 或在 Actions 页面手动运行 `EdgeOne Pages 部署` 即可发布。
+EdgeOne Makers 工作流要求仓库变量 `EDGEONE_PROJECT_NAME` 和仓库密钥 `EDGEONE_API_TOKEN`。配置完成后，推送到 `main` 或在 Actions 页面手动运行 `EdgeOne Makers 部署` 即可发布。
