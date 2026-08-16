@@ -1,0 +1,42 @@
+name: EdgeOne Pages 部署
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      EDGEONE_PROJECT_NAME: ${{ vars.EDGEONE_PROJECT_NAME }}
+      EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.11.0
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建静态站点
+        run: npm run build
+
+      - name: 检查 EdgeOne 配置
+        shell: bash
+        run: |
+          test -n "$EDGEONE_PROJECT_NAME" || { echo "缺少仓库变量 EDGEONE_PROJECT_NAME"; exit 1; }
+          test -n "$EDGEONE_API_TOKEN" || { echo "缺少仓库密钥 EDGEONE_API_TOKEN"; exit 1; }
+
+      - name: 部署到 EdgeOne Pages
+        run: npx --yes edgeone makers deploy ./dist -n "$EDGEONE_PROJECT_NAME" -t "$EDGEONE_API_TOKEN"
