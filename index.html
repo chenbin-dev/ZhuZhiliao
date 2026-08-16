@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#153d33" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23153d33'/%3E%3Cpath d='M20 13v38M28 13v38M36 13v38M44 13v38M17 21h30M17 31h30M17 41h30' stroke='%23ecd778' stroke-width='3'/%3E%3C/svg%3E" />
+    <title>竹知了 | 3D 仿真</title>
+  </head>
+  <body>
+    <main id="app">
+      <section class="experience" aria-label="竹知了三维仿真游戏">
+        <audio id="you-gan-ma-audio" src="/audio/you-gan-ma.mp3" preload="auto" loop></audio>
+        <div id="scene" aria-label="可拖动旋转观察的竹知了模型"></div>
+        <header class="topbar">
+          <div class="brand"><span class="brand-mark" aria-hidden="true">竹</span><div><p>TRADITIONAL SOUND TOY</p><h1>竹知了</h1></div></div>
+          <div class="record"><span>最佳鸣叫</span><strong id="best-time">0.0s</strong></div>
+        </header>
+        <aside class="status-card">
+          <div class="speed-heading"><span>转速</span><strong><b id="rpm">0</b><small> RPM</small></strong></div>
+          <div class="meter"><i id="meter-fill"></i></div>
+          <div class="sound-readout"><span id="sound-status">静待风起</span><span id="pitch-status">-- Hz</span></div>
+          <div class="sound-mode" role="group" aria-label="声音模式">
+            <button class="mode-button is-active" type="button" data-sound-mode="bamboo" aria-pressed="true">竹鸣</button>
+            <button class="mode-button" type="button" data-sound-mode="you-gan-ma" aria-pressed="false">你干嘛</button>
+          </div>
+        </aside>
+        <section class="challenge" aria-live="polite">
+          <div class="challenge-label"><span class="pulse-dot"></span>鸣叫挑战</div>
+          <p>保持 <b>12.0</b> 秒清亮鸣叫</p>
+          <div class="challenge-values"><strong id="live-time">0.0s</strong><span>/ 12.0s</span></div>
+          <div class="challenge-track"><i id="challenge-fill"></i></div>
+        </section>
+        <div class="center-prompt" id="start-overlay"><div class="prompt-ring"></div><button class="start-button" id="start-button" type="button"><span>唤醒知了</span><small>轻扫搓动区，或使用手势</small></button></div>
+        <section class="control-dock" aria-label="操作区">
+          <div class="gesture-preview" id="gesture-preview" hidden><video id="camera" playsinline muted></video><canvas id="hand-overlay"></canvas><span id="camera-status">正在识别双手</span></div>
+          <div class="spin-pad" id="spin-pad" role="button" tabindex="0" aria-label="左右快速搓动以转动竹知了"><span class="spin-arrows" aria-hidden="true">↔</span><strong>搓动</strong><small>左右快速摩擦</small></div>
+          <div class="tool-row"><button class="tool-button" id="camera-button" type="button" aria-pressed="false"><span class="button-icon" aria-hidden="true">⌁</span><span>手势</span></button><button class="tool-button" id="motion-button" type="button" aria-pressed="false"><span class="button-icon" aria-hidden="true">⌁</span><span>摇一摇</span></button><button class="tool-button" id="reset-button" type="button"><span class="button-icon" aria-hidden="true">↻</span><span>重置挑战</span></button></div>
+        </section>
+        <p class="view-hint">拖动模型可旋转观察</p><div class="sound-rings" id="sound-rings" aria-hidden="true"><i></i><i></i><i></i></div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
