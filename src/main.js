@@ -88,6 +88,12 @@ function bladeGeometry() {
   return new THREE.ExtrudeGeometry(shape, { depth: .025, bevelEnabled: true, bevelSegments: 1, bevelSize: .012, bevelThickness: .01, curveSegments: 26 });
 }
 
+/** 以掌根和四个掌指关节的平均位置代表手掌，降低单一关键点抖动对搓动判断的影响。 */
+function palmCenter(hand) {
+  const points = [0, 5, 9, 13, 17];
+  return points.reduce((center, index) => ({ x: center.x + hand[index].x / points.length, y: center.y + hand[index].y / points.length }), { x: 0, y: 0 });
+}
+
 class Game {
   constructor() {
     this.clock = new THREE.Clock(); this.omega = 0; this.angle = 0; this.ringing = 0; this.best = Number(localStorage.getItem('zhu-zhiliao-best') || 0); this.pointer = null;
@@ -95,7 +101,7 @@ class Game {
     this.soundMode = 'bamboo';
     this.clip = ui.voiceClip;
     this.clip.volume = 0;
-    this.handLandmarker = null; this.handStream = null; this.lastVideoTime = -1; this.lastPalm = null; this.handFrame = null; this.motionActive = false; this.lastAcceleration = 0;
+    this.handLandmarker = null; this.handStream = null; this.lastVideoTime = -1; this.lastPairMotion = null; this.lastSinglePalm = null; this.handFrame = null; this.motionActive = false; this.lastAcceleration = 0;
     this.setupScene(); this.bind(); this.animate(); ui.best.textContent = `${this.best.toFixed(1)}s`;
   }
 
@@ -188,7 +194,7 @@ class Game {
     if (this.handStream) { this.stopCamera(); return; }
     ui.cameraButton.disabled = true; ui.preview.hidden = false; ui.cameraStatus.textContent = '正在唤醒摄像头';
     try {
-      this.handStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false }); ui.camera.srcObject = this.handStream; await ui.camera.play(); await this.loadHandLandmarker(); ui.cameraButton.classList.add('is-active'); ui.cameraButton.setAttribute('aria-pressed', 'true'); ui.cameraStatus.textContent = '双手搓动即可加速'; this.detectHands();
+      this.handStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, aspectRatio: { ideal: 4 / 3 } }, audio: false }); ui.camera.srcObject = this.handStream; await ui.camera.play(); await this.loadHandLandmarker(); ui.cameraButton.classList.add('is-active'); ui.cameraButton.setAttribute('aria-pressed', 'true'); ui.cameraStatus.textContent = '请让双手或单手入镜'; this.detectHands();
     } catch (error) { console.error('手势识别启动失败', error); ui.cameraStatus.textContent = '未能访问手势识别'; setTimeout(() => { ui.preview.hidden = true; }, 1800); this.stopCamera(); }
     finally { ui.cameraButton.disabled = false; }
   }
@@ -196,15 +202,55 @@ class Game {
   async loadHandLandmarker() {
     if (this.handLandmarker) return;
     const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm');
-    this.handLandmarker = await HandLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate: 'GPU' }, runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: .56, minTrackingConfidence: .54 });
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const delegates = isMobile ? ['CPU', 'GPU'] : ['GPU', 'CPU'];
+    let lastError;
+    for (const delegate of delegates) {
+      try {
+        this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate },
+          runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: .38, minHandPresenceConfidence: .35, minTrackingConfidence: .35,
+        });
+        return;
+      } catch (error) { lastError = error; }
+    }
+    throw lastError;
   }
 
   detectHands() {
     if (!this.handStream || !this.handLandmarker) return;
     if (ui.camera.readyState >= 2 && ui.camera.currentTime !== this.lastVideoTime) {
-      this.lastVideoTime = ui.camera.currentTime; const results = this.handLandmarker.detectForVideo(ui.camera, performance.now()); const hands = results.landmarks || []; this.drawHands(hands);
-      if (hands.length >= 2) { const palms = hands.slice(0, 2).map((hand) => hand[9]); const separation = palms[0].x - palms[1].x; if (this.lastPalm !== null) { const rub = Math.abs(separation - this.lastPalm); if (rub > .004) this.spin(Math.min(45, rub * 1150)); } this.lastPalm = separation; ui.cameraStatus.textContent = '正在捕捉搓动'; }
-      else { this.lastPalm = null; ui.cameraStatus.textContent = '请让双手同时入镜'; }
+      this.lastVideoTime = ui.camera.currentTime;
+      try {
+        const now = performance.now(); const results = this.handLandmarker.detectForVideo(ui.camera, now); const hands = results.landmarks || []; this.drawHands(hands);
+        const palms = hands.map(palmCenter);
+        if (palms.length >= 2) {
+          // 记录两掌的相对向量，而非只看水平距离，覆盖任意方向的搓动。
+          const pair = { x: palms[0].x - palms[1].x, y: palms[0].y - palms[1].y };
+          if (this.lastPairMotion) {
+            const seconds = Math.max((now - this.lastPairMotion.time) / 1000, 1 / 60);
+            const relativeSpeed = Math.hypot(pair.x - this.lastPairMotion.x, pair.y - this.lastPairMotion.y) / seconds;
+            if (relativeSpeed > .08) this.spin(Math.min(58, relativeSpeed * 64));
+          }
+          this.lastPairMotion = { ...pair, time: now }; this.lastSinglePalm = null;
+          ui.cameraStatus.textContent = '已识别双手，搓动加速';
+        } else if (palms.length === 1) {
+          const palm = palms[0];
+          if (this.lastSinglePalm) {
+            const seconds = Math.max((now - this.lastSinglePalm.time) / 1000, 1 / 60);
+            const speed = Math.hypot(palm.x - this.lastSinglePalm.x, palm.y - this.lastSinglePalm.y) / seconds;
+            if (speed > .38) this.spin(Math.min(36, speed * 30));
+          }
+          this.lastSinglePalm = { ...palm, time: now }; this.lastPairMotion = null;
+          ui.cameraStatus.textContent = '识别到一只手，快速移动可加速';
+        } else {
+          this.lastPairMotion = null; this.lastSinglePalm = null;
+          ui.cameraStatus.textContent = '请让手掌正对摄像头';
+        }
+      } catch (error) {
+        console.warn('手势识别帧失败', error);
+        ui.cameraStatus.textContent = '识别中断，请关闭后重试';
+      }
     }
     this.handFrame = requestAnimationFrame(() => this.detectHands());
   }
@@ -216,7 +262,7 @@ class Game {
     hands.forEach((hand) => { hand.forEach((point) => { ctx.beginPath(); ctx.arc((1 - point.x) * width, point.y * height, 2.6, 0, Math.PI * 2); ctx.fill(); }); links.forEach(([a,b]) => { ctx.beginPath(); ctx.moveTo((1 - hand[a].x) * width, hand[a].y * height); ctx.lineTo((1 - hand[b].x) * width, hand[b].y * height); ctx.stroke(); }); });
   }
 
-  stopCamera() { if (this.handFrame) cancelAnimationFrame(this.handFrame); this.handFrame = null; if (this.handStream) this.handStream.getTracks().forEach((track) => track.stop()); this.handStream = null; this.lastPalm = null; ui.preview.hidden = true; ui.cameraButton.classList.remove('is-active'); ui.cameraButton.setAttribute('aria-pressed', 'false'); }
+  stopCamera() { if (this.handFrame) cancelAnimationFrame(this.handFrame); this.handFrame = null; if (this.handStream) this.handStream.getTracks().forEach((track) => track.stop()); this.handStream = null; this.lastVideoTime = -1; this.lastPairMotion = null; this.lastSinglePalm = null; ui.preview.hidden = true; ui.cameraButton.classList.remove('is-active'); ui.cameraButton.setAttribute('aria-pressed', 'false'); }
 
   update(dt) {
     const sign = Math.sign(this.omega); const speed = Math.abs(this.omega);
