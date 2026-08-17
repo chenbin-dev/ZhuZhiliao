@@ -19,7 +19,7 @@
 
 使用 Node.js 20+ 执行 `npm install`，然后运行 `npm run dev`。
 
-手势功能要求 localhost 或 HTTPS、摄像头权限以及 MediaPipe CDN 可访问。默认竹鸣通过 Web Audio API 合成；人声音轨仅在用户明确选择“你干嘛”模式时播放。项目不需要向 GitHub Actions 注入 EdgeOne API Token；部署由 Makers 的 GitHub Provider 执行。
+手势功能要求 localhost 或 HTTPS、摄像头权限以及 MediaPipe CDN 可访问。默认竹鸣通过 Web Audio API 合成；人声音轨仅在用户明确选择“你干嘛”模式时播放。项目不需要 GitHub Actions 的部署变量或密钥；部署由 Makers 的 GitHub Provider 执行。带 `eo_token` 和 `eo_time` 的 Makers 地址为临时签名链接，不应提交或写入文档。
 
 ## 部署
 

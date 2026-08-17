@@ -37,7 +37,9 @@ npm run dev
 2. 保持构建命令为 `npm run build`、输出目录为 `dist`；根目录的 `edgeone.json` 已包含相同配置。
 3. 推送到 `main` 后，GitHub Actions 先完成构建验证，EdgeOne Makers 随后自动拉取并发布该提交。
 
-当前项目是 GitHub Provider 类型，不支持通过 CLI 上传 `dist`；因此不需要 `EDGEONE_PROJECT_NAME` 或 `EDGEONE_API_TOKEN` 参与工作流。摄像头手势和摇一摇需要通过 `localhost` 或 HTTPS 访问，部署后的 EdgeOne 域名满足安全上下文要求。
+当前项目是 GitHub Provider 类型，不支持通过 CLI 上传 `dist`；因此不需要任何 GitHub Actions 部署凭据。若此前为旧的 CLI 方案创建过 `EDGEONE_PROJECT_NAME` 或 `EDGEONE_API_TOKEN`，可在 GitHub 仓库设置中删除。Makers 生成的带 `eo_token` 和 `eo_time` 的链接是临时签名访问地址，不应写入代码、文档或公开传播；长期访问请在 Makers 项目中使用正式域名。
+
+摄像头手势和摇一摇需要通过 `localhost` 或 HTTPS 访问，部署后的 EdgeOne 域名满足安全上下文要求。
 
 ## 运行时资源
 
