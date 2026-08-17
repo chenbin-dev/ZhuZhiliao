@@ -29,16 +29,15 @@ npm run dev
 
 ## EdgeOne Makers 持续部署
 
-项目已包含 `edgeone.json` 和 `.github/workflows/edgeone-makers.yml`。工作流在推送到 `main` 或手动运行时执行 `npm ci`、`npm run build`，并将 `dist` 部署到 EdgeOne Makers。
+项目已包含 `edgeone.json` 和 `.github/workflows/edgeone-makers.yml`。工作流在推送到 `main` 或手动运行时执行 `npm ci`、`npm run build`；EdgeOne Makers 的 GitHub Provider 负责将 `main` 自动部署到生产环境。
 
 首次配置步骤：
 
-1. 在腾讯 EdgeOne Makers 控制台创建项目，记录项目名称和 API Token。
-2. 在 GitHub 仓库 `Settings → Secrets and variables → Actions` 中新增 Repository variable `EDGEONE_PROJECT_NAME`，值为 EdgeOne 项目名称。
-3. 在同一页面的 Secrets 中新增 `EDGEONE_API_TOKEN`，值为 EdgeOne API Token。Token 只保存到 GitHub Secrets，不要写入代码或提交到仓库。
-4. 推送到 `main` 后查看仓库 `Actions` 页面；工作流成功即完成生产部署。EdgeOne Makers 控制台也可以直接关联 GitHub 仓库并选择 `main` 作为生产分支。
+1. 在腾讯 EdgeOne Makers 控制台通过 GitHub 导入此仓库，并将 `main` 设为生产分支。
+2. 保持构建命令为 `npm run build`、输出目录为 `dist`；根目录的 `edgeone.json` 已包含相同配置。
+3. 推送到 `main` 后，GitHub Actions 先完成构建验证，EdgeOne Makers 随后自动拉取并发布该提交。
 
-构建设置与 `edgeone.json` 保持一致：构建命令为 `npm run build`，输出目录为 `dist`。摄像头手势和摇一摇需要通过 `localhost` 或 HTTPS 访问，部署后的 EdgeOne 域名满足安全上下文要求。
+当前项目是 GitHub Provider 类型，不支持通过 CLI 上传 `dist`；因此不需要 `EDGEONE_PROJECT_NAME` 或 `EDGEONE_API_TOKEN` 参与工作流。摄像头手势和摇一摇需要通过 `localhost` 或 HTTPS 访问，部署后的 EdgeOne 域名满足安全上下文要求。
 
 ## 运行时资源
 

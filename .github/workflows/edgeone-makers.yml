@@ -1,4 +1,4 @@
-name: EdgeOne Makers 部署
+name: EdgeOne Makers 构建验证
 
 on:
   push:
@@ -10,11 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    env:
-      EDGEONE_PROJECT_NAME: ${{ vars.EDGEONE_PROJECT_NAME }}
-      EDGEONE_API_TOKEN: ${{ secrets.EDGEONE_API_TOKEN }}
 
     steps:
       - name: 检出代码
@@ -32,11 +29,6 @@ jobs:
       - name: 构建静态站点
         run: npm run build
 
-      - name: 检查 EdgeOne 配置
-        shell: bash
-        run: |
-          test -n "$EDGEONE_PROJECT_NAME" || { echo "缺少仓库变量 EDGEONE_PROJECT_NAME"; exit 1; }
-          test -n "$EDGEONE_API_TOKEN" || { echo "缺少仓库密钥 EDGEONE_API_TOKEN"; exit 1; }
-
-      - name: 部署到 EdgeOne Makers
-        run: npx --yes edgeone makers deploy ./dist -n "$EDGEONE_PROJECT_NAME" -t "$EDGEONE_API_TOKEN"
+      # 当前 Makers 项目由 GitHub Provider 管理，main 推送会由 Makers 自动部署。
+      - name: 确认 Makers 自动部署
+        run: echo "构建验证通过，EdgeOne Makers 将通过 GitHub Provider 发布 main 分支。"
